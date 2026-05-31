@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>낱말 퀴즈 게임 🐣</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+    background: #f5f4f0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+  }
+  #app {
+    background: #ffffff;
+    border-radius: 20px;
+    padding: 2rem 1.75rem;
+    max-width: 520px;
+    width: 100%;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+  }
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+  }
+  .game-title { font-size: 18px; font-weight: 700; color: #1a1a1a; }
+  .score-box { display: flex; gap: 10px; }
+  .score-card {
+    background: #f5f4f0;
+    border-radius: 10px;
+    padding: 6px 14px;
+    text-align: center;
+  }
+  .score-label { font-size: 10px; color: #888; margin-bottom: 1px; }
+  .score-val { font-size: 18px; font-weight: 700; color: #1a1a1a; }
+  .difficulty-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 1.25rem;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .diff-label { font-size: 12px; color: #888; }
+  .diff-btn {
+    padding: 5px 14px;
+    border: 1.5px solid #ddd;
+    border-radius: 99px;
+    background: #fff;
+    font-size: 13px;
+    color: #888;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: inherit;
+  }
+  .diff-btn.active {
+    border-color: #1D9E75;
+    color: #0F6E56;
+    background: #E1F5EE;
+    font-weight: 600;
+  }
+  .diff-btn:hover:not(.active) { border-color: #aaa; color: #555; }
+  .progress-bar {
+    height: 7px;
+    background: #f0eeea;
+    border-radius: 99px;
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #1D9E75, #5DCAA5);
+    border-radius: 99px;
+    transition: width 0.4s ease;
+  }
+  .word-card {
+    background: #fafaf8;
+    border: 1.5px solid #eeece8;
+    border-radius: 16px;
+    padding: 2rem 1.5rem;
+    text-align: center;
+    margin-bottom: 1.25rem;
+    min-height: 140px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  .category-badge {
+    font-size: 11px;
+    color: #0F6E56;
+    background: #E1F5EE;
+    border-radius: 99px;
+    padding: 3px 12px;
+    margin-bottom: 14px;
+    font-weight: 600;
+  }
+  .main-word {
+    font-size: 38px;
+    font-weight: 700;
+    color: #1a1a1a;
+    letter-spacing: 0.02em;
+    margin-bottom: 10px;
+  }
+  .hint-text {
+    font-size: 13px;
+    color: #888;
+    line-height: 1.5;
+  }
+  .options-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 1.25rem;
+  }
+  .option-btn {
+    background: #fff;
+    border: 1.5px solid #e8e6e2;
+    border-radius: 12px;
+    padding: 14px 12px;
+    font-size: 14px;
+    color: #333;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: center;
+    line-height: 1.5;
+    font-family: inherit;
+    font-weight: 500;
+  }
+  .option-btn:hover:not(:disabled) {
+    background: #f5f4f0;
+    border-color: #ccc;
+  }
+  .option-btn:active:not(:disabled) { transform: scale(0.97); }
+  .option-btn.correct {
+    background: #EAF3DE;
+    border-color: #639922;
+    color: #27500A;
+  }
+  .option-btn.wrong {
+    background: #FCEBEB;
+    border-color: #E24B4A;
+    color: #791F1F;
+  }
+  .option-btn:disabled { cursor: default; }
+  .feedback {
+    text-align: center;
+    font-size: 15px;
+    font-weight: 600;
+    min-height: 24px;
+    margin-bottom: 1rem;
+    line-height: 1.5;
+  }
+  .feedback.correct { color: #3B6D11; }
+  .feedback.wrong { color: #A32D2D; }
+  .next-btn {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 12px;
+    background: #1a1a1a;
+    color: #fff;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+    font-family: inherit;
+  }
+  .next-btn:hover { background: #333; }
+  .result-screen { text-align: center; padding: 1.5rem 0; }
+  .result-emoji { font-size: 52px; margin-bottom: 0.75rem; }
+  .result-stars { font-size: 28px; margin-bottom: 1rem; letter-spacing: 6px; }
+  .result-title { font-size: 22px; font-weight: 700; margin-bottom: 8px; color: #1a1a1a; }
+  .result-sub { font-size: 15px; color: #666; margin-bottom: 1.75rem; line-height: 1.6; }
+  .result-score-big {
+    font-size: 48px;
+    font-weight: 700;
+    color: #1D9E75;
+    margin-bottom: 0.25rem;
+  }
+  .result-score-label { font-size: 13px; color: #888; margin-bottom: 1.5rem; }
+  .btn-row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+  .restart-btn {
+    padding: 11px 24px;
+    border: 1.5px solid #e8e6e2;
+    border-radius: 12px;
+    background: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    color: #333;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: inherit;
+  }
+  .restart-btn:hover { background: #f5f4f0; border-color: #ccc; }
+  .restart-btn.primary {
+    background: #1a1a1a;
+    color: #fff;
+    border-color: #1a1a1a;
+  }
+  .restart-btn.primary:hover { background: #333; }
+  @media (max-width: 480px) {
+    #app { padding: 1.5rem 1.25rem; }
+    .main-word { font-size: 32px; }
+    .options-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+    .option-btn { font-size: 13px; padding: 12px 8px; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="header">
+    <div class="game-title">낱말 퀴즈 🐣</div>
+    <div class="score-box">
+      <div class="score-card">
+        <div class="score-label">점수</div>
+        <div class="score-val" id="score">0</div>
+      </div>
+      <div class="score-card">
+        <div class="score-label">문제</div>
+        <div class="score-val" id="qnum">1 / 10</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="difficulty-row" id="diff-row">
+    <span class="diff-label">단계:</span>
+    <button class="diff-btn active" id="btn-easy" onclick="setDiff('easy')">🌱 쉬움 (7~8세)</button>
+    <button class="diff-btn" id="btn-medium" onclick="setDiff('medium')">🌿 보통 (9~10세)</button>
+    <button class="diff-btn" id="btn-hard" onclick="setDiff('hard')">🌳 어려움 (11~12세)</button>
+  </div>
+
+  <div class="progress-bar"><div class="progress-fill" id="progress" style="width:10%"></div></div>
+
+  <div class="word-card" id="word-card">
+    <div class="category-badge" id="cat-badge"></div>
+    <div class="main-word" id="main-word"></div>
+    <div class="hint-text" id="hint-text"></div>
+  </div>
+
+  <div class="options-grid" id="options-grid"></div>
+  <div class="feedback" id="feedback"></div>
+  <button class="next-btn" id="next-btn" style="display:none" onclick="nextQuestion()">다음 문제 →</button>
+
+  <div class="result-screen" id="result-screen" style="display:none">
+    <div class="result-emoji" id="res-emoji"></div>
+    <div class="result-stars" id="res-stars"></div>
+    <div class="result-score-big" id="res-score-big"></div>
+    <div class="result-score-label">10문제 중</div>
+    <div class="result-title" id="res-title"></div>
+    <div class="result-sub" id="res-sub"></div>
+    <div class="btn-row">
+      <button class="restart-btn primary" onclick="startGame()">🔄 다시 하기</button>
+      <button class="restart-btn" onclick="nextDiff()">⬆️ 다음 단계 도전</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const ALL_QUESTIONS = {
+  easy: [
+    { word:"사과", category:"과일", hint:"빨간색 또는 초록색 과일이에요", options:["달콤한 과일","채소의 종류","물고기 이름","날씨 현상"], answer:0 },
+    { word:"강아지", category:"동물", hint:"멍멍 짖는 동물이에요", options:["고양이","강아지","토끼","물고기"], answer:1 },
+    { word:"하늘", category:"자연", hint:"구름이 떠다니는 곳이에요", options:["바다","땅","하늘","산"], answer:2 },
+    { word:"책상", category:"가구", hint:"공부할 때 앞에 놓는 것이에요", options:["침대","의자","책상","소파"], answer:2 },
+    { word:"봄", category:"계절", hint:"꽃이 피는 계절이에요", options:["여름","가을","겨울","봄"], answer:3 },
+    { word:"연필", category:"학용품", hint:"글씨를 쓸 때 쓰는 도구예요", options:["가위","연필","지우개","자"], answer:1 },
+    { word:"우산", category:"날씨", hint:"비가 올 때 사용해요", options:["모자","장갑","우산","선글라스"], answer:2 },
+    { word:"나비", category:"곤충", hint:"꽃 사이를 날아다녀요", options:["개미","벌","나비","거미"], answer:2 },
+    { word:"냉장고", category:"가전", hint:"음식을 차갑게 보관해요", options:["세탁기","냉장고","청소기","텔레비전"], answer:1 },
+    { word:"무지개", category:"자연", hint:"비가 온 뒤에 하늘에 나타나요", options:["번개","무지개","안개","눈보라"], answer:1 },
+    { word:"바나나", category:"과일", hint:"노란색의 길쭉한 과일이에요", options:["딸기","포도","바나나","수박"], answer:2 },
+    { word:"신발", category:"옷/물건", hint:"발에 신는 것이에요", options:["모자","장갑","신발","양말"], answer:2 },
+    { word:"비", category:"날씨", hint:"하늘에서 물이 떨어져요", options:["눈","비","바람","안개"], answer:1 },
+    { word:"기차", category:"교통", hint:"철길 위를 달리는 교통수단이에요", options:["자동차","배","기차","비행기"], answer:2 },
+    { word:"의사", category:"직업", hint:"아픈 사람을 치료해 주는 사람이에요", options:["선생님","경찰관","의사","요리사"], answer:2 },
+  ],
+  medium: [
+    { word:"용기", category:"감정/태도", hint:"겁나는 일도 씩씩하게 해내는 마음", options:["무서운 마음","어려움을 극복하는 씩씩한 마음","화가 난 감정","슬프고 외로운 감정"], answer:1 },
+    { word:"절약", category:"생활", hint:"돈이나 물건을 아껴 쓰는 것", options:["마음껏 쓰는 것","필요 없는 것을 사는 것","아껴 쓰고 낭비하지 않는 것","남에게 빌려주는 것"], answer:2 },
+    { word:"탐험", category:"활동", hint:"새로운 곳을 직접 찾아가 살펴보는 것", options:["집에서 쉬는 것","책을 읽는 것","모르는 곳을 직접 가서 살펴보는 것","친구에게 묻는 것"], answer:2 },
+    { word:"협동", category:"사회", hint:"여럿이 힘을 모아 함께 일하는 것", options:["혼자서 해결하는 것","여럿이 힘을 합쳐 함께 하는 것","경쟁하며 이기는 것","도움을 거절하는 것"], answer:1 },
+    { word:"발명", category:"과학", hint:"세상에 없던 새로운 것을 처음 만드는 것", options:["옛날 것을 고치는 것","새로운 것을 처음으로 만들어 내는 것","다른 사람 것을 따라하는 것","오래된 것을 쓰는 것"], answer:1 },
+    { word:"환경", category:"자연/사회", hint:"우리를 둘러싸고 있는 자연과 주변 조건", options:["건물과 도로만을 말함","생물이 살아가는 자연과 주변 조건","집 안의 가구들","사람들의 감정"], answer:1 },
+    { word:"자랑스럽다", category:"감정", hint:"잘한 일로 뿌듯함을 느끼는 감정", options:["부끄러운 감정","무서운 감정","뿌듯하고 기분 좋은 감정","지루한 감정"], answer:2 },
+    { word:"예절", category:"사회/예의", hint:"다른 사람을 존중하며 지키는 행동 방식", options:["마음대로 행동하는 것","나만 생각하는 것","상대방을 존중하는 바른 행동","선물을 주는 것"], answer:2 },
+    { word:"호기심", category:"감정/태도", hint:"새로운 것을 알고 싶어하는 마음", options:["지루한 마음","새것이 궁금하고 알고 싶은 마음","겁이 나는 마음","잠이 오는 느낌"], answer:1 },
+    { word:"소중하다", category:"가치", hint:"매우 귀하고 중요하게 여기는 것", options:["별로 중요하지 않다","흔하고 쉽게 구할 수 있다","매우 귀하고 중요하다","재미없고 지루하다"], answer:2 },
+    { word:"노력", category:"태도", hint:"목표를 이루기 위해 열심히 힘을 쓰는 것", options:["쉽게 포기하는 것","목표를 위해 열심히 힘쓰는 것","남에게 부탁하는 것","운이 좋기를 바라는 것"], answer:1 },
+    { word:"배려", category:"사회", hint:"남을 위해 마음을 써서 도와주는 것", options:["자기 이익만 챙기는 것","남을 위해 마음써 도와주는 것","경쟁에서 이기는 것","모르는 척하는 것"], answer:1 },
+    { word:"창의적", category:"태도", hint:"새롭고 독창적인 생각을 하는 것", options:["남의 것을 따라하는 것","새롭고 독창적인 아이디어를 내는 것","정해진 대로만 하는 것","기억력이 좋은 것"], answer:1 },
+    { word:"책임감", category:"태도", hint:"맡은 일을 끝까지 해내려는 마음", options:["포기를 잘 하는 것","남에게 미루는 것","맡은 일을 끝까지 다하려는 마음","규칙을 무시하는 것"], answer:2 },
+    { word:"감사하다", category:"감정", hint:"도움을 받아 고맙게 여기는 마음", options:["화가 나고 억울한 마음","도움을 받아 고맙게 여기는 마음","무관심한 태도","부러워하는 마음"], answer:1 },
+  ],
+  hard: [
+    { word:"생태계", category:"과학", hint:"생물과 환경이 서로 영향을 주고받는 체계", options:["도시의 건물과 도로 체계","생물과 무생물 환경이 이루는 체계","사람들이 만든 법과 규칙","날씨의 변화 과정"], answer:1 },
+    { word:"민주주의", category:"사회", hint:"국민이 스스로 나라의 주인이 되어 다스리는 정치 제도", options:["한 사람이 모든 것을 결정하는 제도","국민이 주인이 되어 스스로 결정하는 제도","군인이 나라를 다스리는 제도","왕이 모든 권력을 갖는 제도"], answer:1 },
+    { word:"마찰력", category:"과학", hint:"두 물체가 닿을 때 운동을 방해하는 힘", options:["물체를 위로 들어올리는 힘","두 면이 닿을 때 움직임을 방해하는 힘","빛이 굴절되는 현상","물이 증발할 때 생기는 힘"], answer:1 },
+    { word:"인류애", category:"도덕", hint:"모든 사람을 사랑하고 아끼는 마음", options:["가족만을 아끼는 마음","적을 이기고 싶은 마음","모든 인간을 사랑하고 아끼는 마음","나 자신만을 위하는 마음"], answer:2 },
+    { word:"비유", category:"국어", hint:"어떤 것을 다른 것에 빗대어 표현하는 방법", options:["사실을 그대로 설명하는 것","어떤 것을 다른 것에 빗대어 설명하는 것","숫자로 정보를 나타내는 것","그림으로 설명하는 것"], answer:1 },
+    { word:"산업혁명", category:"역사", hint:"기계 발명으로 생산 방식이 크게 바뀐 역사적 사건", options:["농업이 처음 시작된 사건","기계 발명으로 생산 방식이 크게 변한 사건","인터넷이 처음 생긴 사건","민주주의가 탄생한 사건"], answer:1 },
+    { word:"대기오염", category:"환경", hint:"유해한 물질이 공기를 더럽히는 환경 문제", options:["물이 더러워지는 현상","공기가 유해 물질로 더러워지는 현상","토양이 오염되는 현상","소음이 심해지는 현상"], answer:1 },
+    { word:"관용", category:"도덕", hint:"남의 잘못이나 다름을 너그럽게 받아들이는 것", options:["규칙을 엄격하게 따지는 것","남의 실수를 너그럽게 받아들이는 것","경쟁에서 이기려는 것","자기 의견만 고집하는 것"], answer:1 },
+    { word:"광합성", category:"과학", hint:"식물이 햇빛으로 스스로 양분을 만드는 과정", options:["동물이 먹이를 소화하는 과정","식물이 햇빛으로 양분을 만드는 과정","물이 증발하여 비가 되는 과정","씨앗이 싹을 틔우는 과정"], answer:1 },
+    { word:"공정하다", category:"가치", hint:"어느 쪽에도 치우치지 않고 올바른 것", options:["한쪽만 편드는 것","틀리고 잘못된 것","어느 쪽에도 치우치지 않고 올바른 것","모두를 똑같이 대하지 않는 것"], answer:2 },
+    { word:"순환", category:"과학", hint:"일정한 과정이 되풀이되어 돌아오는 것", options:["한 번만 일어나는 현상","일정 과정이 반복되어 돌아오는 것","갑자기 변화하는 것","멈춰 있는 상태"], answer:1 },
+    { word:"문화유산", category:"사회/역사", hint:"조상들이 남긴 소중한 문화적 유산", options:["새로 만든 현대 건축물","조상이 남긴 소중한 문화적 유산","외국에서 수입한 물건","현재 사람들이 만드는 예술"], answer:1 },
+    { word:"자원봉사", category:"사회", hint:"대가 없이 스스로 남을 돕는 활동", options:["돈을 받고 하는 일","억지로 시켜서 하는 일","대가 없이 스스로 남을 돕는 활동","학교에서 배우는 활동"], answer:2 },
+    { word:"다양성", category:"사회/가치", hint:"서로 다른 여러 종류가 공존하는 것", options:["모두가 똑같은 상태","한 가지만 존재하는 것","여러 다른 종류가 함께 존재하는 것","변화가 없는 상태"], answer:2 },
+    { word:"순리", category:"도덕/철학", hint:"자연스럽고 올바른 이치나 도리", options:["억지로 이루려는 것","자연스럽고 올바른 이치와 도리","빠른 결과를 얻는 방법","강한 힘으로 이기는 것"], answer:1 },
+  ]
+};
+
+let diff = 'easy', questions = [], idx = 0, score = 0, answered = false;
+
+function setDiff(d) {
+  diff = d;
+  ['easy','medium','hard'].forEach(k => {
+    document.getElementById('btn-'+k).classList.remove('active');
+  });
+  document.getElementById('btn-'+d).classList.add('active');
+  startGame();
+}
+
+function nextDiff() {
+  if (diff === 'easy') setDiff('medium');
+  else if (diff === 'medium') setDiff('hard');
+  else setDiff('easy');
+}
+
+function shuffle(arr) {
+  let a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function startGame() {
+  questions = shuffle(ALL_QUESTIONS[diff]).slice(0, 10);
+  idx = 0; score = 0; answered = false;
+  document.getElementById('result-screen').style.display = 'none';
+  document.getElementById('word-card').style.display = 'flex';
+  document.getElementById('options-grid').style.display = 'grid';
+  document.getElementById('diff-row').style.display = 'flex';
+  renderQuestion();
+}
+
+function renderQuestion() {
+  const q = questions[idx];
+  answered = false;
+  document.getElementById('score').textContent = score;
+  document.getElementById('qnum').textContent = (idx+1) + ' / ' + questions.length;
+  document.getElementById('progress').style.width = ((idx+1)/questions.length*100) + '%';
+  document.getElementById('cat-badge').textContent = q.category;
+  document.getElementById('main-word').textContent = q.word;
+  document.getElementById('hint-text').textContent = '💡 ' + q.hint;
+  document.getElementById('feedback').textContent = '';
+  document.getElementById('feedback').className = 'feedback';
+  document.getElementById('next-btn').style.display = 'none';
+
+  const grid = document.getElementById('options-grid');
+  grid.innerHTML = '';
+  q.options.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'option-btn';
+    btn.textContent = opt;
+    btn.onclick = () => checkAnswer(i);
+    grid.appendChild(btn);
+  });
+}
+
+function checkAnswer(chosen) {
+  if (answered) return;
+  answered = true;
+  const q = questions[idx];
+  const btns = document.querySelectorAll('.option-btn');
+  btns.forEach(b => b.disabled = true);
+  const fb = document.getElementById('feedback');
+  if (chosen === q.answer) {
+    score++;
+    btns[chosen].classList.add('correct');
+    fb.textContent = '🎉 정답이에요!';
+    fb.className = 'feedback correct';
+  } else {
+    btns[chosen].classList.add('wrong');
+    btns[q.answer].classList.add('correct');
+    fb.textContent = '😅 틀렸어요! 정답: ' + q.options[q.answer];
+    fb.className = 'feedback wrong';
+  }
+  document.getElementById('score').textContent = score;
+  const nextBtn = document.getElementById('next-btn');
+  nextBtn.style.display = 'block';
+  nextBtn.textContent = idx < questions.length - 1 ? '다음 문제 →' : '결과 보기 🏆';
+}
+
+function nextQuestion() {
+  idx++;
+  if (idx >= questions.length) { showResult(); return; }
+  renderQuestion();
+}
+
+function showResult() {
+  document.getElementById('word-card').style.display = 'none';
+  document.getElementById('options-grid').style.display = 'none';
+  document.getElementById('next-btn').style.display = 'none';
+  document.getElementById('feedback').textContent = '';
+  document.getElementById('diff-row').style.display = 'none';
+  document.getElementById('result-screen').style.display = 'block';
+
+  const pct = score / questions.length;
+  let emoji, title, sub, stars;
+  if (pct === 1)      { emoji='🏆'; title='완벽해요! 100점!'; sub='모든 문제를 다 맞혔어요!\n정말 대단해요! 🌟'; stars='⭐⭐⭐'; }
+  else if (pct >= 0.8){ emoji='🌟'; title='아주 잘했어요!'; sub='거의 다 맞혔어요!\n조금만 더 연습하면 완벽해요!'; stars='⭐⭐⭐'; }
+  else if (pct >= 0.6){ emoji='😊'; title='잘했어요!'; sub='꽤 많이 맞혔어요!\n한 번 더 해볼까요?'; stars='⭐⭐'; }
+  else if (pct >= 0.4){ emoji='💪'; title='잘 하고 있어요!'; sub='도전을 멈추지 마세요!\n다시 해보면 더 잘할 수 있어요!'; stars='⭐'; }
+  else               { emoji='🌱'; title='다시 해봐요!'; sub='포기하지 마세요!\n연습하면 분명 나아질 거예요!'; stars='🌱'; }
+
+  document.getElementById('res-emoji').textContent = emoji;
+  document.getElementById('res-title').textContent = title;
+  document.getElementById('res-sub').textContent = sub;
+  document.getElementById('res-stars').textContent = stars;
+  document.getElementById('res-score-big').textContent = score + '점';
+}
+
+startGame();
+</script>
+</body>
+</html>
